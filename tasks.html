@@ -525,30 +525,29 @@
     }
   });
 
-  // ── Seed tasks (runs once) ──
-  if (!localStorage.getItem('seeded_forthea_v2')) {
-    const seedTasks = [
-      { title: 'Send Forthea Report — My Fit Foods',        category: 'Forthea Reports' },
-      { title: 'Send Forthea Report — Define Living',       category: 'Forthea Reports' },
-      { title: 'Send Forthea Report — PHC',                 category: 'Forthea Reports' },
-      { title: 'Send Forthea Report — Paul Davis Georgia',  category: 'Forthea Reports' },
-      { title: 'Send Forthea Report — Paul Davis Inland Empire', category: 'Forthea Reports' },
-    ];
-    seedTasks.forEach(s => {
-      tasks.unshift({
+  // ── Pinned tasks (always ensure these exist) ──
+  const pinnedTasks = [
+    { title: 'Send Forthea Report — My Fit Foods',             category: 'Forthea Reports', date: '2026-03-13' },
+    { title: 'Send Forthea Report — Define Living',            category: 'Forthea Reports', date: '2026-03-13' },
+    { title: 'Send Forthea Report — PHC',                      category: 'Forthea Reports', date: '2026-03-13' },
+    { title: 'Send Forthea Report — Paul Davis Georgia',       category: 'Forthea Reports', date: '2026-03-13' },
+    { title: 'Send Forthea Report — Paul Davis Inland Empire', category: 'Forthea Reports', date: '2026-03-13' },
+  ];
+  pinnedTasks.forEach(p => {
+    if (!tasks.find(t => t.title === p.title)) {
+      tasks.push({
         id: Date.now() + Math.random(),
-        title: s.title,
+        title: p.title,
         priority: 'high',
-        date: '2026-03-13',
-        category: s.category,
+        date: p.date,
+        category: p.category,
         notes: null,
         done: false,
         created: Date.now()
       });
-    });
-    save();
-    localStorage.setItem('seeded_forthea_v2', '1');
-  }
+    }
+  });
+  save();
 
   // ── Init ──
   render();
