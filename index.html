@@ -71,31 +71,95 @@
       cursor: pointer;
     }
 
-    /* ── Filter bar ── */
-    .filter-bar {
+    /* ── Toolbar ── */
+    .toolbar {
       display: flex;
       gap: 8px;
-      padding: 12px 20px;
-      overflow-x: auto;
-      scrollbar-width: none;
+      padding: 12px 16px;
+      align-items: center;
     }
-    .filter-bar::-webkit-scrollbar { display: none; }
-    .filter-btn {
-      flex-shrink: 0;
+    .tool-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
       border: 1px solid var(--border);
       background: var(--surface);
-      border-radius: 20px;
-      padding: 6px 14px;
+      border-radius: 10px;
+      padding: 7px 13px;
       font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
-      color: var(--text-muted);
+      color: var(--text);
       transition: all .15s;
+      white-space: nowrap;
     }
-    .filter-btn.active {
-      background: var(--accent);
+    .tool-btn.active {
+      background: var(--accent-light);
       border-color: var(--accent);
-      color: #fff;
+      color: var(--accent);
     }
+    .tool-btn svg { flex-shrink: 0; }
+    .active-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      width: 16px; height: 16px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-left: 2px;
+    }
+
+    /* ── Dropdown panel ── */
+    .dropdown-wrap { position: relative; }
+    .dropdown-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      z-index: 25;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      min-width: 200px;
+      padding: 8px;
+      animation: fadeIn .15s ease;
+    }
+    .dropdown-panel.open { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .dp-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      padding: 6px 10px 4px;
+    }
+    .dp-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      background: none;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      cursor: pointer;
+      text-align: left;
+      transition: background .1s;
+    }
+    .dp-option:hover   { background: var(--bg); }
+    .dp-option.selected { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+    .dp-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
     /* ── Task list ── */
     #task-list {
@@ -322,17 +386,51 @@
   <button onclick="requestNotifPermission()">Enable</button>
 </div>
 
-<div class="filter-bar">
-  <button class="filter-btn active" data-filter="all">All</button>
-  <button class="filter-btn" data-filter="active">Active</button>
-  <button class="filter-btn" data-filter="done">Completed</button>
-  <button class="filter-btn" data-filter="company-lht">LHT Media</button>
-  <button class="filter-btn" data-filter="company-forthea">Forthea</button>
-  <button class="filter-btn" data-filter="company-uh">UH</button>
-  <button class="filter-btn" data-filter="company-personal">Personal</button>
-  <button class="filter-btn" data-filter="high">🔴 High</button>
-  <button class="filter-btn" data-filter="medium">🟡 Medium</button>
-  <button class="filter-btn" data-filter="low">🟢 Low</button>
+<div class="toolbar">
+
+  <!-- Filter -->
+  <div class="dropdown-wrap">
+    <button class="tool-btn" id="filter-btn" onclick="toggleDropdown('filter-panel', 'filter-btn')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      Filter
+      <span id="filter-count" class="active-badge" style="display:none"></span>
+    </button>
+    <div class="dropdown-panel" id="filter-panel">
+      <div class="dp-label">Status</div>
+      <button class="dp-option selected" data-filter-status="all"     onclick="setFilter('status','all',this)">All Tasks</button>
+      <button class="dp-option"          data-filter-status="active"  onclick="setFilter('status','active',this)">Active only</button>
+      <button class="dp-option"          data-filter-status="done"    onclick="setFilter('status','done',this)">Completed only</button>
+      <div class="dp-divider"></div>
+      <div class="dp-label">Company</div>
+      <button class="dp-option selected" data-filter-company="all"      onclick="setFilter('company','all',this)">All Companies</button>
+      <button class="dp-option"          data-filter-company="lht"      onclick="setFilter('company','lht',this)">LHT Media</button>
+      <button class="dp-option"          data-filter-company="forthea"  onclick="setFilter('company','forthea',this)">Forthea</button>
+      <button class="dp-option"          data-filter-company="uh"       onclick="setFilter('company','uh',this)">UH</button>
+      <button class="dp-option"          data-filter-company="personal" onclick="setFilter('company','personal',this)">Personal</button>
+      <div class="dp-divider"></div>
+      <div class="dp-label">Priority</div>
+      <button class="dp-option selected" data-filter-priority="all"    onclick="setFilter('priority','all',this)">All Priorities</button>
+      <button class="dp-option"          data-filter-priority="high"   onclick="setFilter('priority','high',this)">🔴 High</button>
+      <button class="dp-option"          data-filter-priority="medium" onclick="setFilter('priority','medium',this)">🟡 Medium</button>
+      <button class="dp-option"          data-filter-priority="low"    onclick="setFilter('priority','low',this)">🟢 Low</button>
+    </div>
+  </div>
+
+  <!-- Sort -->
+  <div class="dropdown-wrap">
+    <button class="tool-btn" id="sort-btn" onclick="toggleDropdown('sort-panel', 'sort-btn')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+      Sort
+    </button>
+    <div class="dropdown-panel" id="sort-panel">
+      <div class="dp-label">Sort by</div>
+      <button class="dp-option selected" data-sort="priority" onclick="setSort('priority',this)">Priority</button>
+      <button class="dp-option"          data-sort="date"     onclick="setSort('date',this)">Due Date</button>
+      <button class="dp-option"          data-sort="created"  onclick="setSort('created',this)">Date Added</button>
+      <button class="dp-option"          data-sort="alpha"    onclick="setSort('alpha',this)">Alphabetical</button>
+    </div>
+  </div>
+
 </div>
 
 <div class="summary" id="summary"></div>
@@ -424,7 +522,8 @@
 <script>
   // ── State ──
   let tasks = JSON.parse(localStorage.getItem('tasks_v1') || '[]');
-  let currentFilter = 'all';
+  let activeFilters = { status: 'all', company: 'all', priority: 'all' };
+  let activeSort    = 'priority';
 
   // ── Helpers ──
   function save() { localStorage.setItem('tasks_v1', JSON.stringify(tasks)); }
@@ -520,15 +619,10 @@
     const summary = document.getElementById('summary');
 
     let filtered = tasks.filter(t => {
-      if (currentFilter === 'active')           return !t.done;
-      if (currentFilter === 'done')             return t.done;
-      if (currentFilter === 'high')             return t.priority === 'high'   && !t.done;
-      if (currentFilter === 'medium')           return t.priority === 'medium' && !t.done;
-      if (currentFilter === 'low')             return t.priority === 'low'    && !t.done;
-      if (currentFilter === 'company-lht')      return t.company === 'lht'      && !t.done;
-      if (currentFilter === 'company-forthea')  return t.company === 'forthea'  && !t.done;
-      if (currentFilter === 'company-uh')       return t.company === 'uh'       && !t.done;
-      if (currentFilter === 'company-personal') return t.company === 'personal' && !t.done;
+      if (activeFilters.status === 'active' && t.done)   return false;
+      if (activeFilters.status === 'done'   && !t.done)  return false;
+      if (activeFilters.company !== 'all'   && t.company !== activeFilters.company) return false;
+      if (activeFilters.priority !== 'all'  && t.priority !== activeFilters.priority) return false;
       return true;
     });
 
@@ -547,16 +641,22 @@
 
     const pOrder = { high: 0, medium: 1, low: 2 };
     filtered.sort((a, b) => {
+      // Always done tasks at bottom
       if (a.done !== b.done) return a.done ? 1 : -1;
-      if (pOrder[a.priority] !== pOrder[b.priority]) return pOrder[a.priority] - pOrder[b.priority];
-      if (a.date && b.date) {
-        const da = a.date + (a.time || '');
-        const db = b.date + (b.time || '');
+      if (activeSort === 'priority') {
+        if (pOrder[a.priority] !== pOrder[b.priority]) return pOrder[a.priority] - pOrder[b.priority];
+        const da = (a.date || '9999') + (a.time || '');
+        const db = (b.date || '9999') + (b.time || '');
         return da.localeCompare(db);
       }
-      if (a.date) return -1;
-      if (b.date) return 1;
-      return b.id - a.id;
+      if (activeSort === 'date') {
+        const da = (a.date || '9999') + (a.time || '');
+        const db = (b.date || '9999') + (b.time || '');
+        return da.localeCompare(db);
+      }
+      if (activeSort === 'created') return b.created - a.created;
+      if (activeSort === 'alpha')   return a.title.localeCompare(b.title);
+      return 0;
     });
 
     list.innerHTML = filtered.map(t => {
@@ -668,15 +768,67 @@
     if (e.target === document.getElementById('modal-backdrop')) closeModal();
   }
 
-  // ── Filters ──
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  // ── Dropdowns ──
+  function toggleDropdown(panelId, btnId) {
+    const panel = document.getElementById(panelId);
+    const btn   = document.getElementById(btnId);
+    const isOpen = panel.classList.contains('open');
+    // Close all dropdowns
+    document.querySelectorAll('.dropdown-panel').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    if (!isOpen) {
+      panel.classList.add('open');
       btn.classList.add('active');
-      currentFilter = btn.dataset.filter;
-      render();
-    });
+    }
+  }
+
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.dropdown-wrap')) {
+      document.querySelectorAll('.dropdown-panel').forEach(p => p.classList.remove('open'));
+      document.querySelectorAll('.tool-btn').forEach(b => {
+        // Keep active state if filters are applied
+        b.classList.remove('active');
+      });
+      updateFilterBtnState();
+    }
   });
+
+  function setFilter(type, value, el) {
+    activeFilters[type] = value;
+    // Update selected state within that group
+    document.querySelectorAll(`[data-filter-${type}]`).forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    updateFilterBtnState();
+    render();
+  }
+
+  function setSort(value, el) {
+    activeSort = value;
+    document.querySelectorAll('[data-sort]').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    // Update sort button label
+    const labels = { priority: 'Priority', date: 'Due Date', created: 'Date Added', alpha: 'A–Z' };
+    document.getElementById('sort-btn').innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+      ${labels[value]}`;
+    toggleDropdown('', ''); // close
+    render();
+  }
+
+  function updateFilterBtnState() {
+    const activeCount = Object.values(activeFilters).filter(v => v !== 'all').length;
+    const badge = document.getElementById('filter-count');
+    const btn   = document.getElementById('filter-btn');
+    if (activeCount > 0) {
+      badge.textContent = activeCount;
+      badge.style.display = 'inline-flex';
+      btn.classList.add('active');
+    } else {
+      badge.style.display = 'none';
+      btn.classList.remove('active');
+    }
+  }
 
   // ── Header date ──
   const now = new Date();
