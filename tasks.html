@@ -526,7 +526,7 @@
   });
 
   // ── Seed tasks (runs once) ──
-  if (!localStorage.getItem('seeded_forthea_v1')) {
+  if (!localStorage.getItem('seeded_forthea_v2')) {
     const seedTasks = [
       { title: 'Send Forthea Report — My Fit Foods',        category: 'Forthea Reports' },
       { title: 'Send Forthea Report — Define Living',       category: 'Forthea Reports' },
@@ -547,7 +547,7 @@
       });
     });
     save();
-    localStorage.setItem('seeded_forthea_v1', '1');
+    localStorage.setItem('seeded_forthea_v2', '1');
   }
 
   // ── Init ──
