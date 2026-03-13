@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="My Tasks" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>My Tasks</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f7f5;
+      --surface: #ffffff;
+      --border: #e8e8e4;
+      --text: #1a1a1a;
+      --text-muted: #888;
+      --accent: #3b6ef8;
+      --accent-light: #eef1fe;
+      --danger: #e84040;
+      --success: #2db87e;
+      --tag-bg: #f0f0ee;
+      --radius: 12px;
+      --shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding-bottom: 100px;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px 12px;
+    }
+    header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+    header p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Filter bar ── */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 20px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-btn {
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all .15s;
+    }
+    .filter-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* ── Task list ── */
+    #task-list {
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 15px; }
+
+    /* ── Task card ── */
+    .task-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 14px 12px;
+      box-shadow: var(--shadow);
+      animation: slideIn .2s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .task-card.done { opacity: 0.55; }
+    .task-card.done .task-title { text-decoration: line-through; }
+
+    .task-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .task-check {
+      flex-shrink: 0;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s;
+      margin-top: 1px;
+    }
+    .task-check:hover { border-color: var(--accent); }
+    .task-card.done .task-check {
+      background: var(--success);
+      border-color: var(--success);
+    }
+    .task-check svg { display: none; }
+    .task-card.done .task-check svg { display: block; }
+
+    .task-body { flex: 1; min-width: 0; }
+    .task-title {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+    .task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 7px;
+      align-items: center;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .badge-priority-high   { background: #fdecea; color: var(--danger); }
+    .badge-priority-medium { background: #fff4e5; color: #c07800; }
+    .badge-priority-low    { background: #edf7f1; color: #1a7a4a; }
+    .badge-cat  { background: var(--tag-bg); color: var(--text-muted); }
+    .badge-date { background: var(--tag-bg); color: var(--text-muted); }
+    .badge-date.overdue { background: #fdecea; color: var(--danger); }
+
+    .task-notes {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .task-delete {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--border);
+      padding: 2px;
+      border-radius: 6px;
+      line-height: 1;
+      transition: color .15s;
+    }
+    .task-delete:hover { color: var(--danger); }
+
+    /* ── FAB ── */
+    #fab {
+      position: fixed;
+      bottom: 24px;
+      right: 20px;
+      z-index: 20;
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      font-size: 26px;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(59,110,248,.4);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .15s;
+    }
+    #fab:active { transform: scale(0.93); }
+
+    /* ── Modal ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0; z-index: 30;
+      background: rgba(0,0,0,0.35);
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-width: 520px;
+      padding: 20px 20px 36px;
+      animation: slideUp .25s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(40px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-handle {
+      width: 36px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 18px;
+    }
+    .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 18px; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 6px;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 15px;
+      font-family: inherit;
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      transition: border-color .15s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--accent); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .btn-add {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: opacity .15s;
+    }
+    .btn-add:active { opacity: 0.85; }
+
+    /* ── Summary bar ── */
+    .summary {
+      padding: 10px 20px 4px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    @media (min-width: 520px) {
+      .modal-backdrop { align-items: center; }
+      .modal { border-radius: 20px; max-height: 90vh; overflow-y: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>My Tasks</h1>
+  <p id="header-date"></p>
+</header>
+
+<div class="filter-bar">
+  <button class="filter-btn active" data-filter="all">All</button>
+  <button class="filter-btn" data-filter="active">Active</button>
+  <button class="filter-btn" data-filter="done">Completed</button>
+  <button class="filter-btn" data-filter="high">🔴 High</button>
+  <button class="filter-btn" data-filter="medium">🟡 Medium</button>
+  <button class="filter-btn" data-filter="low">🟢 Low</button>
+</div>
+
+<div class="summary" id="summary"></div>
+<div id="task-list"></div>
+
+<button id="fab" onclick="openModal()" title="Add task">+</button>
+
+<div class="modal-backdrop" id="modal-backdrop" onclick="handleBackdropClick(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>New Task</h2>
+    <form id="task-form" onsubmit="addTask(event)">
+      <div class="form-group">
+        <label>Task</label>
+        <input type="text" id="f-title" placeholder="What needs to be done?" required autocomplete="off" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="f-priority">
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" id="f-date" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <input type="text" id="f-category" placeholder="e.g. Work, Personal, Health" list="cat-suggestions" autocomplete="off" />
+        <datalist id="cat-suggestions"></datalist>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="f-notes" placeholder="Any extra details..."></textarea>
+      </div>
+      <button type="submit" class="btn-add">Add Task</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // ── State ──
+  let tasks = JSON.parse(localStorage.getItem('tasks_v1') || '[]');
+  let currentFilter = 'all';
+
+  // ── Helpers ──
+  function save() {
+    localStorage.setItem('tasks_v1', JSON.stringify(tasks));
+  }
+
+  function formatDate(iso) {
+    if (!iso) return null;
+    const [y, m, d] = iso.split('-').map(Number);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${months[m-1]} ${d}`;
+  }
+
+  function isOverdue(iso) {
+    if (!iso) return false;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const due = new Date(iso + 'T00:00:00');
+    return due < today;
+  }
+
+  function getCategories() {
+    return [...new Set(tasks.map(t => t.category).filter(Boolean))];
+  }
+
+  // ── Render ──
+  function render() {
+    const list = document.getElementById('task-list');
+    const summary = document.getElementById('summary');
+
+    let filtered = tasks.filter(t => {
+      if (currentFilter === 'active') return !t.done;
+      if (currentFilter === 'done') return t.done;
+      if (currentFilter === 'high') return t.priority === 'high' && !t.done;
+      if (currentFilter === 'medium') return t.priority === 'medium' && !t.done;
+      if (currentFilter === 'low') return t.priority === 'low' && !t.done;
+      return true;
+    });
+
+    const total = tasks.length;
+    const done = tasks.filter(t => t.done).length;
+    summary.textContent = total === 0 ? '' : `${done} of ${total} completed`;
+
+    // Update category suggestions
+    const datalist = document.getElementById('cat-suggestions');
+    datalist.innerHTML = getCategories().map(c => `<option value="${c}">`).join('');
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="empty-state"><div class="icon">${tasks.length === 0 ? '📋' : '✅'}</div><p>${tasks.length === 0 ? 'No tasks yet. Tap + to add one.' : 'Nothing to show here.'}</p></div>`;
+      return;
+    }
+
+    // Sort: incomplete first, then by priority, then by date
+    const pOrder = { high: 0, medium: 1, low: 2 };
+    filtered.sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      if (pOrder[a.priority] !== pOrder[b.priority]) return pOrder[a.priority] - pOrder[b.priority];
+      if (a.date && b.date) return a.date.localeCompare(b.date);
+      if (a.date) return -1;
+      if (b.date) return 1;
+      return b.id - a.id;
+    });
+
+    list.innerHTML = filtered.map(t => {
+      const overdue = !t.done && isOverdue(t.date);
+      const dateLabel = t.date ? `<span class="badge badge-date ${overdue ? 'overdue' : ''}">📅 ${formatDate(t.date)}${overdue ? ' · Overdue' : ''}</span>` : '';
+      const catLabel = t.category ? `<span class="badge badge-cat">${t.category}</span>` : '';
+      const priorityLabel = `<span class="badge badge-priority-${t.priority}">${t.priority === 'high' ? '↑ High' : t.priority === 'medium' ? '→ Med' : '↓ Low'}</span>`;
+      const notesHtml = t.notes ? `<div class="task-notes">${t.notes.replace(/</g,'&lt;')}</div>` : '';
+
+      return `
+        <div class="task-card ${t.done ? 'done' : ''}" data-id="${t.id}">
+          <div class="task-top">
+            <button class="task-check" onclick="toggleDone(${t.id})" title="Mark complete">
+              <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                <path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <div class="task-body">
+              <div class="task-title">${t.title.replace(/</g,'&lt;')}</div>
+              <div class="task-meta">
+                ${priorityLabel}${dateLabel}${catLabel}
+              </div>
+              ${notesHtml}
+            </div>
+            <button class="task-delete" onclick="deleteTask(${t.id})" title="Delete">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+              </svg>
+            </button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Actions ──
+  function toggleDone(id) {
+    const t = tasks.find(t => t.id === id);
+    if (t) { t.done = !t.done; save(); render(); }
+  }
+
+  function deleteTask(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    save(); render();
+  }
+
+  function addTask(e) {
+    e.preventDefault();
+    const title = document.getElementById('f-title').value.trim();
+    if (!title) return;
+    tasks.unshift({
+      id: Date.now(),
+      title,
+      priority: document.getElementById('f-priority').value,
+      date: document.getElementById('f-date').value || null,
+      category: document.getElementById('f-category').value.trim() || null,
+      notes: document.getElementById('f-notes').value.trim() || null,
+      done: false,
+      created: Date.now()
+    });
+    save();
+    closeModal();
+    currentFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('[data-filter="all"]').classList.add('active');
+    render();
+  }
+
+  // ── Modal ──
+  function openModal() {
+    document.getElementById('task-form').reset();
+    document.getElementById('modal-backdrop').classList.add('open');
+    setTimeout(() => document.getElementById('f-title').focus(), 250);
+  }
+
+  function closeModal() {
+    document.getElementById('modal-backdrop').classList.remove('open');
+  }
+
+  function handleBackdropClick(e) {
+    if (e.target === document.getElementById('modal-backdrop')) closeModal();
+  }
+
+  // ── Filters ──
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      render();
+    });
+  });
+
+  // ── Header date ──
+  const now = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('header-date').textContent =
+    `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+
+  // ── Keyboard ──
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+    if ((e.key === 'n' || e.key === 'N') && !document.getElementById('modal-backdrop').classList.contains('open')) {
+      openModal();
+    }
+  });
+
+  // ── Seed tasks (runs once) ──
+  if (!localStorage.getItem('seeded_forthea_v1')) {
+    const seedTasks = [
+      { title: 'Send Forthea Report — My Fit Foods',        category: 'Forthea Reports' },
+      { title: 'Send Forthea Report — Define Living',       category: 'Forthea Reports' },
+      { title: 'Send Forthea Report — PHC',                 category: 'Forthea Reports' },
+      { title: 'Send Forthea Report — Paul Davis Georgia',  category: 'Forthea Reports' },
+      { title: 'Send Forthea Report — Paul Davis Inland Empire', category: 'Forthea Reports' },
+    ];
+    seedTasks.forEach(s => {
+      tasks.unshift({
+        id: Date.now() + Math.random(),
+        title: s.title,
+        priority: 'high',
+        date: '2026-03-13',
+        category: s.category,
+        notes: null,
+        done: false,
+        created: Date.now()
+      });
+    });
+    save();
+    localStorage.setItem('seeded_forthea_v1', '1');
+  }
+
+  // ── Init ──
+  render();
+</script>
+</body>
+</html>
